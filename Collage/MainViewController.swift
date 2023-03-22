@@ -24,7 +24,6 @@ class MainViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     let collageSize = imagePreview.frame.size
-    
   }
   
   private func updateUI(photos: [UIImage]) {
