@@ -31,12 +31,12 @@ class PhotosViewController: UICollectionViewController {
     
     // Check for Photos access authorization and reload the list if authorized.
     PHPhotoLibrary.fetchAuthorizationStatus { [ weak self ] (status) in
-        guard let self else {
-            return
-        }
+        // 1
+        guard let self else { return }
+        // 2
         if status {
         self.photos = PhotosViewController.loadPhotos()
-        
+    
         DispatchQueue.main.async {
           self.collectionView.reloadData()
         }

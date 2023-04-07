@@ -64,14 +64,16 @@ class MainViewController: UIViewController {
     }
       // 1
       PhotoWriter.save(image)
-          .sink { [ unowned self ] complition in
+          .sink { [ weak self ] complition in
+              guard let self else { return }
             // 2
               if case .failure(let error) = complition {
                   self.showMessage("Error", description:
             error.localizedDescription)
               }
               self.actionClear()
-          } receiveValue: { [ unowned self ] (id) in
+          } receiveValue: { [ weak self ] (id) in
+              guard let self else { return }
               // 3
               self.showMessage("\(id)")
           }.store(in: &subscriptions)
