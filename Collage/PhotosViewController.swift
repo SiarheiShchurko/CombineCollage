@@ -20,28 +20,21 @@ class PhotosViewController: UICollectionViewController {
     return CGSize(width: cellSize.width * UIScreen.main.scale,
                   height: cellSize.height * UIScreen.main.scale)
   }()
-  
+    
     private var selectedPhotosSubject = PassthroughSubject<UIImage, Never>()
-    @Published private var selctedPhotosCount = 0
+    private var subscriptions = Set<AnyCancellable>()
+    @Published var selectedPhotosCount = 0
     
   // MARK: - View controller
   
   override func viewDidLoad() {
     super.viewDidLoad()
+      // Check for Photos access authorization and reload the list if authorized.
+      checkFotoAccess()
     
-    // Check for Photos access authorization and reload the list if authorized.
-    PHPhotoLibrary.fetchAuthorizationStatus { [ weak self ] (status) in
-        // 1
-        guard let self else { return }
-        // 2
-        if status {
-        self.photos = PhotosViewController.loadPhotos()
-    
-        DispatchQueue.main.async {
-          self.collectionView.reloadData()
-        }
-      }
-    }
+
+
+ 
   }
   
   override func viewWillDisappear(_ animated: Bool) {
@@ -76,7 +69,11 @@ class PhotosViewController: UICollectionViewController {
       cell.flash()
     }
     
-      self.imageManager.requestImage(for: asset, targetSize: view.frame.size, contentMode: .aspectFill, options: nil, resultHandler: { [ weak self ] (image, info) in
+      self.imageManager.requestImage(for: asset,
+                                     targetSize: view.frame.size,
+                                     contentMode: .aspectFill,
+                                     options: nil,
+                                     resultHandler: { [ weak self ] (image, info) in
       guard
         let self,
         let image,
@@ -90,7 +87,7 @@ class PhotosViewController: UICollectionViewController {
       }
       // Send the selected photo
           self.selectedPhotosSubject.send(image)
-          self.selctedPhotosCount += 1
+          self.selectedPhotosCount += 1
     })
   }
 }
@@ -103,4 +100,34 @@ extension PhotosViewController {
     allPhotosOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
     return PHAsset.fetchAssets(with: allPhotosOptions)
   }
+}
+// MARK: - UI assets
+extension PhotosViewController {
+    private func showPhotoMessage(title: String, description: String? = nil) {
+        alert(title: title, text: description ?? String())
+            .sink(receiveValue: { $0 })
+            .store(in: &subscriptions)
+    }
+}
+
+// MARK: - Check settings assets
+extension PhotosViewController {
+    private func checkFotoAccess() {
+        PHPhotoLibrary.isAuthorizedPublisher
+            .sink { [ weak self ] resultAutorization in
+                guard let self else {
+                    return
+                }
+                switch resultAutorization {
+                case true:
+                    self.photos = PhotosViewController.loadPhotos()
+                    DispatchQueue.main.async {
+                        self.collectionView.reloadData()
+                    }
+                case false:
+                    self.showPhotoMessage(title: "No access to camera roll", description: "You can grant access to Collage from Settings app")
+                }
+                  
+            }.store(in: &subscriptions)
+    }
 }
