@@ -15,7 +15,6 @@ class PhotosViewController: UICollectionViewController {
     
   private lazy var photos = PhotosViewController.loadPhotos()
   private lazy var imageManager = PHCachingImageManager()
-  
   private lazy var thumbnailSize: CGSize = {
     let cellSize = (self.collectionViewLayout as! UICollectionViewFlowLayout).itemSize
     return CGSize(width: cellSize.width * UIScreen.main.scale,
@@ -23,6 +22,7 @@ class PhotosViewController: UICollectionViewController {
   }()
   
     private var selectedPhotosSubject = PassthroughSubject<UIImage, Never>()
+    @Published private var selctedPhotosCount = 0
     
   // MARK: - View controller
   
@@ -69,7 +69,6 @@ class PhotosViewController: UICollectionViewController {
   }
   
   // MARK: - UICollectionViewDelegate
-  
   override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
     let asset = photos.object(at: indexPath.item)
     
@@ -77,7 +76,7 @@ class PhotosViewController: UICollectionViewController {
       cell.flash()
     }
     
-    imageManager.requestImage(for: asset, targetSize: view.frame.size, contentMode: .aspectFill, options: nil, resultHandler: { [ weak self ] (image, info) in
+      self.imageManager.requestImage(for: asset, targetSize: view.frame.size, contentMode: .aspectFill, options: nil, resultHandler: { [ weak self ] (image, info) in
       guard
         let self,
         let image,
@@ -90,10 +89,10 @@ class PhotosViewController: UICollectionViewController {
         return
       }
       // Send the selected photo
-      self.selectedPhotosSubject.send(image)
+          self.selectedPhotosSubject.send(image)
+          self.selctedPhotosCount += 1
     })
   }
-
 }
 
 // MARK: - Fetch assets
@@ -104,5 +103,4 @@ extension PhotosViewController {
     allPhotosOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
     return PHAsset.fetchAssets(with: allPhotosOptions)
   }
-  
 }
